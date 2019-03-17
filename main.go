@@ -4,10 +4,16 @@ import (
 	"runtime"
 	"fmt"
 	"time"
+    "math/rand"
 )
 
 func main() {
+
 	RamUsage()
+
+    var value int
+    value = getValues()
+    fmt.Println(value)
 }
 
 //Function that gathers the Ram Usage
@@ -23,4 +29,10 @@ func RamUsage() {
 
 func bToMb(b uint64) uint64 {
     return b / 1024 / 1024
+}
+
+func getValues() int {
+
+    rand.Seed(time.Now().UnixNano())
+    return rand.Int()
 }
