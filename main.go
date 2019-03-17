@@ -5,19 +5,52 @@ import (
 	"fmt"
 	"time"
     "math/rand"
+    "os"
+    "log"
 )
 
 const samp_len = 4      // "Sensor" Sample size
+const fileName = "dat1.txt"
 
 func main() {
 
 	//RamUsage()
-
     var sample [samp_len] int
-    sample = getValues()
-    for i := 0; i< len(sample); i++ {
-        fmt.Println(sample[i])
+
+    initializeFile()
+    f, err := os.Create(fileName)
+    check(err)
+
+    defer f.Close()
+
+    i:=10
+
+    for i>1 { 
+        sample = getValues()
+        writeFile(sample)
     }
+    
+}
+
+//Function that writes to the File that will be used to save values
+func writeFile(w [samp_len]int) {
+
+    f, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
+    check(err)
+    defer f.Close()
+
+    for _, value := range w {
+        _, err = f.WriteString(fmt.Sprintf("%d\n", value))
+       check(err)
+
+    }
+
+}
+
+//Function that initializes file
+func initializeFile() {
+
+   
 }
 /*
 //Function that gathers the Ram Usage
@@ -42,7 +75,15 @@ func getValues() [samp_len]int {
     var tmp [samp_len] int
     rand.Seed(time.Now().UnixNano())   //Using current time in nanosenconds as a seed so it changes everytime
     for i := 0; i< len(tmp); i++ {
-        tmp[i] = rand.Int()                  //Generating random value
+        tmp[i] = rand.Int()            //Generating random value
+        //check(tmp[i])
     }
     return tmp
+}
+
+// Error handler
+func check(err error) {
+    if err != nil {
+        log.Fatal(err)
+    }
 }
