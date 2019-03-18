@@ -7,6 +7,7 @@ import (
     "math/rand"
     "os"
     "log"
+    "bufio"
 )
 
 const samp_len = 4      // "Sensor" Sample size
@@ -15,27 +16,33 @@ const fileName = "dat1.txt"
 func main() {
 
 	//RamUsage()
-    var sample [samp_len] int
-
     initializeFile()
-    f, err := os.Create(fileName)
+    
+    go generator()
+    reader := bufio.NewReader(os.Stdin)
+    cmdString, err := reader.ReadString('\n')
     check(err)
 
-    defer f.Close()
+    fmt.Println(cmdString)    
+}
 
-    i:=10
+//Function that runs in "background" generating samples each second
+func generator() {
 
-    for i>1 { 
-        sample = getValues()
-        writeFile(sample)
+    i := 10
+    for i>1 {                           //Infinite loop
+        var sample [samp_len] int       //Array to save vaules
+
+        sample = getValues()            //Getting sample values
+        writeFile(sample)               //Writing samples to file
+        time.Sleep(time.Second)         //Waiting one second
     }
-    
 }
 
 //Function that writes to the File that will be used to save values
 func writeFile(w [samp_len]int) {
 
-    f, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
+    f, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755) // Opens file with permission and appends new values
     check(err)
     defer f.Close()
 
@@ -49,7 +56,10 @@ func writeFile(w [samp_len]int) {
 
 //Function that initializes file
 func initializeFile() {
+    f, err := os.Create(fileName)
+    check(err)
 
+    defer f.Close()
    
 }
 /*
