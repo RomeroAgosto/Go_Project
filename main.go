@@ -23,18 +23,17 @@ var reader = bufio.NewReader(os.Stdin)      // Standard input (keyboard) reader
 var perCPU = true                           // Per CPU percentage
 
 func main() {
-
-	//RamUsage()
     initializeFile()
     
     go generator()
+
     userInterface ()
 }
 
 //Function that gathers the Ram Usage
 func RamUsage() {
     v, _ := mem.VirtualMemory()
-    fmt.Printf("Total: %v, Free:%v, UsedPercent:%f%%\n", v.Total, v.Free, v.UsedPercent)
+    fmt.Printf("RAM{ Total: %v, Free:%v, UsedPercent:%f%%}\n", v.Total, v.Free, v.UsedPercent)
 }
 
 //Function that gathers CPU Usage
@@ -45,6 +44,8 @@ func CPUUsage() {
     }
     check(err)
 }
+
+//Making bytes into megabytes
 func bToMb(b uint64) uint64 {
     return b / 1024 / 1024
 }
@@ -69,9 +70,13 @@ func userInterface() {
             allFunc(argv)
         case "some" :
             someFunc(argv)
-        /*case "average" :
+        case "average" :
             averFunc(argv)
-        */default:
+        case "x" :
+            fmt.Println("System Exiting in 2 seconds")
+            time.Sleep(2 * time.Second)
+            os.Exit(0)
+        default:
             fmt.Println("Unexpected input")
         }
     }
@@ -79,37 +84,120 @@ func userInterface() {
 
 //Function that handles the case to show all variables
 func allFunc(argv [] string) {
-    //
-    fmt.Println("All function")
-    fileHandle, _ := os.Open(fileName)
-    defer fileHandle.Close()
+    
+    if(len(argv)!=2) {
+        fmt.Println("Not a correct input")
+        customPause()
+        return
+    }
 
-    fileScanner := bufio.NewScanner(fileHandle)
+    var all [samp_len] bool
+
+    for i := 0; i < samp_len; i++ {
+        all[i] = true
+    }
+
     tmp, err := strconv.Atoi(argv[1])
     check(err)
 
-    fmt.Printf("|")
-    for i := 1; i <= samp_len; i++ {
-        fmt.Printf("      Variable %d      |", i)
-    }
-    fmt.Println()
-    for i := 1; i <= tmp; i++ {
-        if !fileScanner.Scan() {
-            fmt.Println("Not Enought Data to Show")
-            break;
-        }
-        fmt.Printf("|")
-        for j :=1; j <= samp_len; j++ {
-            fmt.Printf("%22s|", fileScanner.Text())
-        }
-        fmt.Println()
-    }
+    printVar(all, tmp)
+
     customPause()
 }
 
 //Function that handles the case to show some variables
 func someFunc(argv [] string) {
+    if(len(argv)!=3) {
+        fmt.Println("Not a correct input")
+        customPause()
+        return
+    }
 
+    //Getting what variables are to be printed
+    some := selVar(argv[1])
+
+    //Getting the value of samples to print
+    tmp, err := strconv.Atoi(argv[2])
+    check(err)
+
+    //Printing Variables and values
+    printVar(some, tmp)
+    customPause()
+}
+
+//Function that handles the case to show the average of some variables
+func averFunc(argv [] string) {
+    if(len(argv)!=2) {
+        fmt.Println("Not a correct input")
+        customPause()
+        return
+    }
+    some := selVar(argv[1])
+    var aver[samp_len] float64
+
+    //Opening file and scanner to read values from the file
+    fileHandle, err := os.Open(fileName)
+    check(err)
+    defer fileHandle.Close()
+
+    fileScanner := bufio.NewScanner(fileHandle)
+    var i int = 0
+    for j:=1; fileScanner.Scan(); j++ {
+        tmp, err := strconv.ParseFloat(fileScanner.Text(), 64)
+        check(err)
+        aver[i%samp_len] += tmp
+        i++
+    }
+    for j := 0; j < samp_len; j++ {
+        if some[j] {
+            fmt.Printf("Average of Variable %d: %f", (j+1), (aver[j]/(float64(i/samp_len))))
+            fmt.Println()
+        }
+    }
+    customPause()
+}
+
+func selVar(sel string) [samp_len]bool {
+
+    var some [samp_len]bool
+    for i:=0; i < len(sel); i++ { 
+        if i%2==1{
+            continue
+        }
+        some[sel[i]-49]=true
+    }
+    return some
+}
+
+//Prints selected variables
+func printVar(sel [samp_len] bool, len int) {
+    //Opening file and scanner to read values from the file
+    fileHandle, err := os.Open(fileName)
+    check(err)
+    defer fileHandle.Close()
+
+    fileScanner := bufio.NewScanner(fileHandle)
+   
+    fmt.Printf("|")
+    for i := 0; i < samp_len; i++ {
+        if sel[i] {
+            fmt.Printf("      Variable %d      |", (i+1))
+        }
+    }
+    fmt.Println()
+    for i := 1; i <= len; i++ {
+        fmt.Printf("|")
+        for j :=0; j < samp_len; j++ {
+            if !fileScanner.Scan() {
+                fmt.Println("Not Enought Data to Show")
+                return;
+            }
+            if sel[j] {
+                    fmt.Printf("%22s|", fileScanner.Text())
+                }
+            }
+        fmt.Println()
+    }
 }
 
 //Function with a custom pause that waits for an "enter to continue"
@@ -132,10 +220,11 @@ func printMenu() {
     RamUsage()
     CPUUsage()
     fmt.Println("\n")
-    fmt.Println("MAIN MENU\n")
+    fmt.Printf("MAIN MENU - Working with %d Variables\n\n", samp_len)
     fmt.Println("To get the N metrics for all variables write all followed by the value of N \n(Example: all 5)\n")
     fmt.Println("To get the N metrics for one or more variables write some\nfollowed by what variables 1-4 with commas in between and followed by the value of N \n(Example: some 1,3 5)\n")
     fmt.Println("To get the average for one or more variables write average\nfollowed by what variables 1-4 with commas in between \n(Example: average 1,3)\n")
+    fmt.Println("Enter 'x' to exit the program\n")
     fmt.Printf("\n->")
 }
 
