@@ -13,12 +13,14 @@ import (
     "io/ioutil"
     "strconv"
     "github.com/shirou/gopsutil/mem"
+    "github.com/shirou/gopsutil/cpu"
 )
 
 const samp_len = 4                          // "Sensor" Sample size
 const fileName = "dat1.txt"                 // Name of the file with the samples
 var flagGo bool = false                     // Free to go boolean
 var reader = bufio.NewReader(os.Stdin)      // Standard input (keyboard) reader
+var perCPU = true                           // Per CPU percentage
 
 func main() {
 
@@ -31,14 +33,17 @@ func main() {
 
 //Function that gathers the Ram Usage
 func RamUsage() {
-
     v, _ := mem.VirtualMemory()
     fmt.Printf("Total: %v, Free:%v, UsedPercent:%f%%\n", v.Total, v.Free, v.UsedPercent)
 }
 
 //Function that gathers CPU Usage
 func CPUUsage() {
-    
+    usage, err := cpu.Percent(0, perCPU)
+    for i, value := range usage {
+        fmt.Printf("CPU%d: %f ", i, value)
+    }
+    check(err)
 }
 func bToMb(b uint64) uint64 {
     return b / 1024 / 1024
@@ -55,17 +60,16 @@ func userInterface() {
     for i>1 {
         printMenu()
         input = readInput()
-        if len(input) < 3 {
-            argv[0] = "error"
-        } else{
-            argv = strings.Fields(input)
-        }
+        argv = strings.Fields(input)
+        if len(argv) < 1 {                      // To avoid the program to crash in case there isn't a first word
+            argv = append(argv, "error")
+        } 
         switch argv[0] {
         case "all" :
             allFunc(argv)
-        /*case "some" :
+        case "some" :
             someFunc(argv)
-        case "average" :
+        /*case "average" :
             averFunc(argv)
         */default:
             fmt.Println("Unexpected input")
@@ -80,52 +84,35 @@ func allFunc(argv [] string) {
     fileHandle, _ := os.Open(fileName)
     defer fileHandle.Close()
 
-    ok := true
-
     fileScanner := bufio.NewScanner(fileHandle)
     tmp, err := strconv.Atoi(argv[1])
     check(err)
 
-    var r1 string = ""
-    var r2 string = ""
-    var r3 string = ""
-    var r4 string = ""
-
-    for i := 1; i <= (tmp*4); i++ {
+    fmt.Printf("|")
+    for i := 1; i <= samp_len; i++ {
+        fmt.Printf("      Variable %d      |", i)
+    }
+    fmt.Println()
+    for i := 1; i <= tmp; i++ {
         if !fileScanner.Scan() {
             fmt.Println("Not Enought Data to Show")
-            ok = false
             break;
         }
-        switch (i%4) {
-        case 1 :
-            r1=r1 + fileScanner.Text() + "; "
-        case 2 :
-            r2=r2 + fileScanner.Text() + "; "
-        case 3 :
-            r3=r3 + fileScanner.Text() + "; "
-        case 0 :
-            r4=r4 + fileScanner.Text() + "; "      
-        default:
-            fmt.Println("Error during reading")
-            os.Exit(1)
-
+        fmt.Printf("|")
+        for j :=1; j <= samp_len; j++ {
+            fmt.Printf("%22s|", fileScanner.Text())
         }
+        fmt.Println()
     }
-    if !ok {
-        return
-    }
-    fmt.Println("Variable 1: ", r1)
-    fmt.Println("Variable 2: ", r2)
-    fmt.Println("Variable 3: ", r3)
-    fmt.Println("Variable 4: ", r4)
     customPause()
 }
 
 //Function that handles the case to show some variables
+func someFunc(argv [] string) {
+
+}
 
 //Function with a custom pause that waits for an "enter to continue"
-
 func customPause() {
 
     fmt.Print("Press 'Enter' to continue...")
@@ -143,6 +130,9 @@ func printMenu() {
     clearComand()
     fmt.Println("\nWELCOME TO THE SENSOR SIMULATOR\n")
     RamUsage()
+    CPUUsage()
+    fmt.Println("\n")
+    fmt.Println("MAIN MENU\n")
     fmt.Println("To get the N metrics for all variables write all followed by the value of N \n(Example: all 5)\n")
     fmt.Println("To get the N metrics for one or more variables write some\nfollowed by what variables 1-4 with commas in between and followed by the value of N \n(Example: some 1,3 5)\n")
     fmt.Println("To get the average for one or more variables write average\nfollowed by what variables 1-4 with commas in between \n(Example: average 1,3)\n")
@@ -155,7 +145,7 @@ var clear map[string]func() //create a map for storing clear funcs
 func init() {
     clear = make(map[string]func()) //Initialize it
     clear["linux"] = func() { 
-        cmd := exec.Command("clear") //Linux example
+        cmd := exec.Command("clear") //Linux
         cmd.Stdout = os.Stdout
         cmd.Run()
     }
