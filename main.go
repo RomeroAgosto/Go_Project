@@ -12,6 +12,7 @@ import (
     "strings"
     "io/ioutil"
     "strconv"
+    "github.com/shirou/gopsutil/mem"
 )
 
 const samp_len = 4                          // "Sensor" Sample size
@@ -30,15 +31,15 @@ func main() {
 
 //Function that gathers the Ram Usage
 func RamUsage() {
-        var m runtime.MemStats
-        runtime.ReadMemStats(&m)
-        // For info on each, see: https://golang.org/pkg/runtime/#MemStats
-        fmt.Printf("Alloc = %v ", bToMb(m.Alloc))
-        fmt.Printf("\tTotalAlloc = %v ", bToMb(m.TotalAlloc))
-        fmt.Printf("\tSys = %v MiB", bToMb(m.Sys))
-        fmt.Printf("\tNumGC = %v\n", m.NumGC)
+
+    v, _ := mem.VirtualMemory()
+    fmt.Printf("Total: %v, Free:%v, UsedPercent:%f%%\n", v.Total, v.Free, v.UsedPercent)
 }
 
+//Function that gathers CPU Usage
+func CPUUsage() {
+    
+}
 func bToMb(b uint64) uint64 {
     return b / 1024 / 1024
 }
@@ -62,9 +63,9 @@ func userInterface() {
         switch argv[0] {
         case "all" :
             allFunc(argv)
-        case "some" :
+        /*case "some" :
             someFunc(argv)
-        /*case "average" :
+        case "average" :
             averFunc(argv)
         */default:
             fmt.Println("Unexpected input")
