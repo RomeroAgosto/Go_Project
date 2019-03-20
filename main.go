@@ -91,31 +91,17 @@ func allFunc(argv [] string) {
         return
     }
 
-    //Opening file and scanner to read values from the file
-    fileHandle, err := os.Open(fileName)
-    check(err)
-    defer fileHandle.Close()
+    var all [samp_len] bool
 
-    fileScanner := bufio.NewScanner(fileHandle)
+    for i := 0; i < samp_len; i++ {
+        all[i] = true
+    }
+
     tmp, err := strconv.Atoi(argv[1])
+    check(err)
 
-    //Printing Variables and Values
-    fmt.Printf("|")
-    for i := 1; i <= samp_len; i++ {
-        fmt.Printf("      Variable %d      |", i)
-    }
-    fmt.Println()
-    for i := 1; i <= tmp; i++ {
-        if !fileScanner.Scan() {
-            fmt.Println("Not Enought Data to Show")
-            break;
-        }
-        fmt.Printf("|")
-        for j :=1; j <= samp_len; j++ {
-            fmt.Printf("%22s|", fileScanner.Text())
-        }
-        fmt.Println()
-    }
+    printVar(all, tmp)
+
     customPause()
 }
 
@@ -141,8 +127,34 @@ func someFunc(argv [] string) {
 
 //Function that handles the case to show the average of some variables
 func averFunc(argv [] string) {
-    
+    if(len(argv)!=2) {
+        fmt.Println("Not a correct input")
+        customPause()
+        return
+    }
+    some := selVar(argv[1])
+    var aver[samp_len] float64
 
+    //Opening file and scanner to read values from the file
+    fileHandle, err := os.Open(fileName)
+    check(err)
+    defer fileHandle.Close()
+
+    fileScanner := bufio.NewScanner(fileHandle)
+    var i int = 0
+    for j:=1; fileScanner.Scan(); j++ {
+        tmp, err := strconv.ParseFloat(fileScanner.Text(), 64)
+        check(err)
+        aver[i%samp_len] += tmp
+        i++
+    }
+    for j := 0; j < samp_len; j++ {
+        if some[j] {
+            fmt.Printf("Average of Variable %d: %f", (j+1), (aver[j]/(float64(i/samp_len))))
+            fmt.Println()
+        }
+    }
+    customPause()
 }
 
 func selVar(sel string) [samp_len]bool {
@@ -174,16 +186,16 @@ func printVar(sel [samp_len] bool, len int) {
     }
     fmt.Println()
     for i := 1; i <= len; i++ {
-        if !fileScanner.Scan() {
-            fmt.Println("Not Enought Data to Show")
-            break;
-        }
         fmt.Printf("|")
         for j :=0; j < samp_len; j++ {
-            if sel[j] {
-                fmt.Printf("%22s|", fileScanner.Text())
+            if !fileScanner.Scan() {
+                fmt.Println("Not Enought Data to Show")
+                return;
             }
-        }
+            if sel[j] {
+                    fmt.Printf("%22s|", fileScanner.Text())
+                }
+            }
         fmt.Println()
     }
 }
@@ -208,10 +220,11 @@ func printMenu() {
     RamUsage()
     CPUUsage()
     fmt.Println("\n")
-    fmt.Println("MAIN MENU\n")
+    fmt.Printf("MAIN MENU - Working with %d Variables\n\n", samp_len)
     fmt.Println("To get the N metrics for all variables write all followed by the value of N \n(Example: all 5)\n")
     fmt.Println("To get the N metrics for one or more variables write some\nfollowed by what variables 1-4 with commas in between and followed by the value of N \n(Example: some 1,3 5)\n")
     fmt.Println("To get the average for one or more variables write average\nfollowed by what variables 1-4 with commas in between \n(Example: average 1,3)\n")
+    fmt.Println("Enter 'x' to exit the program\n")
     fmt.Printf("\n->")
 }
 
