@@ -13,12 +13,14 @@ import (
     "io/ioutil"
     "strconv"
     "github.com/shirou/gopsutil/mem"
+    "github.com/shirou/gopsutil/cpu"
 )
 
 const samp_len = 4                          // "Sensor" Sample size
 const fileName = "dat1.txt"                 // Name of the file with the samples
 var flagGo bool = false                     // Free to go boolean
 var reader = bufio.NewReader(os.Stdin)      // Standard input (keyboard) reader
+var perCPU = true                           // Per CPU percentage
 
 func main() {
 
@@ -31,14 +33,17 @@ func main() {
 
 //Function that gathers the Ram Usage
 func RamUsage() {
-
     v, _ := mem.VirtualMemory()
     fmt.Printf("Total: %v, Free:%v, UsedPercent:%f%%\n", v.Total, v.Free, v.UsedPercent)
 }
 
 //Function that gathers CPU Usage
 func CPUUsage() {
-    
+    usage, err := cpu.Percent(0, perCPU)
+    for i, value := range usage {
+        fmt.Printf("CPU%d: %f ", i, value)
+    }
+    check(err)
 }
 func bToMb(b uint64) uint64 {
     return b / 1024 / 1024
@@ -55,11 +60,10 @@ func userInterface() {
     for i>1 {
         printMenu()
         input = readInput()
-        if len(input) < 3 {
-            argv[0] = "error"
-        } else{
-            argv = strings.Fields(input)
-        }
+        argv = strings.Fields(input)
+        if len(argv) < 1 {                      // To avoid the program to crash in case there isn't a first word
+            argv = append(argv, "error")
+        } 
         switch argv[0] {
         case "all" :
             allFunc(argv)
@@ -143,6 +147,9 @@ func printMenu() {
     clearComand()
     fmt.Println("\nWELCOME TO THE SENSOR SIMULATOR\n")
     RamUsage()
+    CPUUsage()
+    fmt.Println("\n")
+    fmt.Println("MAIN MENU\n")
     fmt.Println("To get the N metrics for all variables write all followed by the value of N \n(Example: all 5)\n")
     fmt.Println("To get the N metrics for one or more variables write some\nfollowed by what variables 1-4 with commas in between and followed by the value of N \n(Example: some 1,3 5)\n")
     fmt.Println("To get the average for one or more variables write average\nfollowed by what variables 1-4 with commas in between \n(Example: average 1,3)\n")
