@@ -67,9 +67,9 @@ func userInterface() {
         switch argv[0] {
         case "all" :
             allFunc(argv)
-        /*case "some" :
+        case "some" :
             someFunc(argv)
-        case "average" :
+        /*case "average" :
             averFunc(argv)
         */default:
             fmt.Println("Unexpected input")
@@ -84,52 +84,35 @@ func allFunc(argv [] string) {
     fileHandle, _ := os.Open(fileName)
     defer fileHandle.Close()
 
-    ok := true
-
     fileScanner := bufio.NewScanner(fileHandle)
     tmp, err := strconv.Atoi(argv[1])
     check(err)
 
-    var r1 string = ""
-    var r2 string = ""
-    var r3 string = ""
-    var r4 string = ""
-
-    for i := 1; i <= (tmp*4); i++ {
+    fmt.Printf("|")
+    for i := 1; i <= samp_len; i++ {
+        fmt.Printf("      Variable %d      |", i)
+    }
+    fmt.Println()
+    for i := 1; i <= tmp; i++ {
         if !fileScanner.Scan() {
             fmt.Println("Not Enought Data to Show")
-            ok = false
             break;
         }
-        switch (i%4) {
-        case 1 :
-            r1=r1 + fileScanner.Text() + "; "
-        case 2 :
-            r2=r2 + fileScanner.Text() + "; "
-        case 3 :
-            r3=r3 + fileScanner.Text() + "; "
-        case 0 :
-            r4=r4 + fileScanner.Text() + "; "      
-        default:
-            fmt.Println("Error during reading")
-            os.Exit(1)
-
+        fmt.Printf("|")
+        for j :=1; j <= samp_len; j++ {
+            fmt.Printf("%22s|", fileScanner.Text())
         }
+        fmt.Println()
     }
-    if !ok {
-        return
-    }
-    fmt.Println("Variable 1: ", r1)
-    fmt.Println("Variable 2: ", r2)
-    fmt.Println("Variable 3: ", r3)
-    fmt.Println("Variable 4: ", r4)
     customPause()
 }
 
 //Function that handles the case to show some variables
+func someFunc(argv [] string) {
+
+}
 
 //Function with a custom pause that waits for an "enter to continue"
-
 func customPause() {
 
     fmt.Print("Press 'Enter' to continue...")
@@ -162,7 +145,7 @@ var clear map[string]func() //create a map for storing clear funcs
 func init() {
     clear = make(map[string]func()) //Initialize it
     clear["linux"] = func() { 
-        cmd := exec.Command("clear") //Linux example
+        cmd := exec.Command("clear") //Linux
         cmd.Stdout = os.Stdout
         cmd.Run()
     }
